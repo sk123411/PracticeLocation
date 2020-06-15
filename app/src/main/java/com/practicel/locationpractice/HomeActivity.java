@@ -160,8 +160,8 @@ public class HomeActivity extends AppCompatActivity implements FirebaseLoadingLi
                     @Override
                     public void onClick(View v, int pos) {
 
-                        //   Common.trackingUser = model;
-                        //    startActivity(new Intent(v.getContext(), TrackingUserActivity.class));
+                          Common.trackingUser = model;
+                           startActivity(new Intent(v.getContext(), TrackingActivity.class));
                     }
                 });
             }
