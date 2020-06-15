@@ -1,5 +1,6 @@
 package com.practicel.locationpractice;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
 import android.os.Bundle;
@@ -10,10 +11,17 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessagingService;
 
-public class TrackingActivity extends FragmentActivity implements OnMapReadyCallback {
+public class TrackingActivity extends FragmentActivity implements OnMapReadyCallback, ValueEventListener {
 
     private GoogleMap mMap;
+    private DatabaseReference publicLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,6 +31,17 @@ public class TrackingActivity extends FragmentActivity implements OnMapReadyCall
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        registerEventRealtime();
+    }
+
+    private void registerEventRealtime() {
+
+        publicLocation = FirebaseDatabase.getInstance().getReference(Common.LOCATION)
+                .child(Common.trackingUser.getUid());
+
+        publicLocation.addValueEventListener(this);
+
     }
 
 
@@ -40,8 +59,40 @@ public class TrackingActivity extends FragmentActivity implements OnMapReadyCall
         mMap = googleMap;
 
         // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+
+    }
+
+    @Override
+    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+        if (dataSnapshot.getValue()!=null){
+
+            MyLocation location = dataSnapshot.getValue(MyLocation.class);
+            LatLng userMarker = new LatLng(location.getLatitude(),location.getLongitude());
+            mMap.addMarker(new MarkerOptions().position(userMarker).title(Common.trackingUser.getEmail())
+            .snippet(Common.getDateFormatted(Common.convertTimestampToDate(location.getTime()))));
+
+
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userMarker,16f));
+        }
+    }
+
+    @Override
+    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        publicLocation.removeEventListener(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        publicLocation.addValueEventListener(this);
     }
 }

@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -18,6 +19,9 @@ import android.widget.Toast;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -36,6 +40,14 @@ public class HomeActivity extends AppCompatActivity implements FirebaseLoadingLi
     FirebaseLoadingListener firebaseLoadingListener;
 
     List<String> suggestList = new ArrayList<>();
+
+
+    DatabaseReference locationRef;
+    LocationRequest locationRequest;
+    FusedLocationProviderClient fusedLocationProviderClient;
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -110,6 +122,9 @@ public class HomeActivity extends AppCompatActivity implements FirebaseLoadingLi
 
         loadFriendList();
         //loadSearchData();
+
+        locationRef = FirebaseDatabase.getInstance().getReference(Common.LOCATION);
+        updateLocation();
     }
 
     private void loadSearchData() {
@@ -180,7 +195,31 @@ public class HomeActivity extends AppCompatActivity implements FirebaseLoadingLi
 
     }
 
+    private void updateLocation() {
 
+        buildLocationRequest();
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
+        fusedLocationProviderClient.requestLocationUpdates(locationRequest,getPendingIntent());
+    }
+
+    private PendingIntent getPendingIntent() {
+          Intent intent = new Intent(getApplicationContext(), MyLocationReceiver.class);
+         intent.setAction(MyLocationReceiver.ACTION);
+              return PendingIntent.getBroadcast(getApplicationContext(),0,intent,PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    private void buildLocationRequest() {
+
+
+        locationRequest = new LocationRequest();
+        locationRequest.setSmallestDisplacement(10f);
+        locationRequest.setFastestInterval(3000);
+        locationRequest.setInterval(5000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+
+
+    }
     @Override
     public void onResume() {
         super.onResume();
